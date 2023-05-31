@@ -18,7 +18,7 @@ impl PerformParams {
 
 pub struct PerformForm;
 impl PerformForm {
-    pub fn build(ticket_id: String, perform_id: String) -> Result<Value> {
+    pub fn build(ticket_id: &String, perform_id: &String) -> Result<Value> {
         let ex_params = json!({
             "dataType": 2,
             "dataId": perform_id,
@@ -47,6 +47,9 @@ pub struct Sku {
 
     #[serde(rename = "priceName")]
     pub price_name: String,
+
+    #[serde(rename = "skuSalable")]
+    pub sku_salable: String,
 
     pub price: String,
 }

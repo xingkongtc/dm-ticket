@@ -83,14 +83,19 @@ impl DmTicket {
     }
 
     // 生成订单
-    pub async fn build_order(&self, item_id: &String, sku_id: &String) -> Result<OrderInfo> {
+    pub async fn build_order(
+        &self,
+        item_id: &String,
+        sku_id: &String,
+        buy_num: usize,
+    ) -> Result<OrderInfo> {
         let start = Instant::now();
 
         let url = "https://mtop.damai.cn/h5/mtop.trade.order.build.h5/4.0/?";
 
         let params = OrderParams::build()?;
 
-        let data = OrderForm::build(item_id, sku_id, self.account.ticket.num)?;
+        let data = OrderForm::build(item_id, sku_id, buy_num)?;
 
         let res = self.client.request(url, params, data).await?;
 
@@ -194,8 +199,8 @@ impl DmTicket {
     // 获取场次/票档信息
     pub async fn get_perform_info(
         &self,
-        ticket_id: String,
-        perform_id: String,
+        ticket_id: &String,
+        perform_id: &String,
     ) -> Result<PerformInfo> {
         let start = Instant::now();
 
@@ -215,10 +220,10 @@ impl DmTicket {
     }
 
     // 购买流程
-    pub async fn buy(&self, item_id: &String, sku_id: &String) -> Result<bool> {
+    pub async fn buy(&self, item_id: &String, sku_id: &String, buy_num: usize) -> Result<bool> {
         let start = Instant::now();
 
-        let order_info = match self.build_order(item_id, sku_id).await {
+        let order_info = match self.build_order(item_id, sku_id, buy_num).await {
             Ok(data) => {
                 info!("成功生成订单...");
                 data
@@ -260,6 +265,32 @@ impl DmTicket {
         (hour, min, sec)
     }
 
+    // 尝试多次购买
+    pub async fn multiple_buy_attempts(
+        &self,
+        item_id: &String,
+        sku_id: &String,
+        buy_num: Option<usize>,
+    ) -> Result<bool> {
+        let buy_num = match buy_num {
+            Some(num) => num,
+            None => self.account.ticket.num,
+        };
+        let retry_times = self.account.retry_times;
+        let retry_interval = self.account.retry_interval;
+        for _ in 0..retry_times {
+            if let Ok(res) = self.buy(item_id, sku_id, buy_num).await {
+                if res {
+                    // 抢购成功, 退出
+                    return Ok(true);
+                }
+            }
+            // 重试间隔
+            tokio::time::sleep(Duration::from_millis(retry_interval)).await;
+        }
+        Ok(false)
+    }
+
     // 程序入口
     pub async fn run(&self) -> Result<()> {
         let user_info = match self.get_user_info().await {
@@ -277,6 +308,7 @@ impl DmTicket {
         let ticket_id = self.account.ticket.id.clone();
         let perfomr_idx = self.account.ticket.sessions - 1; // 场次索引
         let sku_idx = self.account.ticket.grade - 1; // 票档索引
+        let priority_purchase_time = self.account.ticket.priority_purchase_time;
 
         info!("正在获取演唱会信息...");
         let ticket_info = self.get_ticket_info(ticket_id.clone()).await?;
@@ -307,7 +339,7 @@ impl DmTicket {
             .clone();
 
         info!("正在获取场次/票档信息...");
-        let perform_info = self.get_perform_info(ticket_id, perform_id).await?;
+        let perform_info = self.get_perform_info(&ticket_id, &perform_id).await?;
         let sku_id = perform_info.perform.sku_list[sku_idx].sku_id.clone();
         let sku_name = perform_info.perform.sku_list[sku_idx].price_name.clone();
         let item_id = perform_info.perform.sku_list[sku_idx].item_id.clone();
@@ -317,6 +349,7 @@ impl DmTicket {
             .item
             .item
             .sell_start_time_str;
+
         let mut start_timestamp = ticket_info
             .detail_view_component_map
             .item
@@ -324,33 +357,77 @@ impl DmTicket {
             .sell_start_timestamp
             .parse::<i64>()?;
 
-        let request_time = self.account.request_time.unwrap_or(-1);
-
-        let retry_times = self.account.retry_times.unwrap_or(2);
-        let retry_interval = self.account.retry_interval.unwrap_or(100);
+        let request_time = self.account.request_time;
 
         if request_time > 0 {
             start_timestamp = request_time
         }
 
         println!(
-            "\r\n\t账号备注: {}\n\t账号昵称: {}\n\t门票名称: {}\n\t场次名称: {}\n\t票档名称: {}\n\t开抢时间: {}\n",
+            "\r\n\t账号备注: {}\n\t账号昵称: {}\n\t门票名称: {}\n\t场次名称: {}\n\t票档名称: {}\n\t开售时间: {}\n",
             self.account.remark, user_info.nickname, ticket_name, perform_name, sku_name, start_time_str
         );
 
+        let local: DateTime<Local> = Local::now();
+        let current_timestamp = local.timestamp_millis();
+
+        match current_timestamp > start_timestamp {
+            true => {
+                let _ = self.buy_it_now(&item_id, &sku_id).await;
+            }
+            false => {
+                let res = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await;
+                match res {
+                    Ok(is_succes) => {
+                        if is_succes {
+                            return Ok(());
+                        }
+                    }
+                    Err(e) => {
+                        if e.to_string().contains("退出") {
+                            return Ok(());
+                        }
+                    }
+                };
+                if priority_purchase_time > 0 {
+                    let start_timestamp = start_timestamp + priority_purchase_time * 60 * 1000;
+                    info!("优先购已结束, 等待正式开抢...\n\n");
+                    if let Ok(res) = self.wait_for_buy(start_timestamp, &item_id, &sku_id).await {
+                        if res {
+                            return Ok(());
+                        }
+                    }
+                }
+                info!("未能抢到票, 开启捡漏模式...");
+                self.pick_up_leaks(ticket_id, perform_id).await?;
+            }
+        };
+        Ok(())
+    }
+
+    // 立即购买
+    pub async fn buy_it_now(&self, item_id: &String, sku_id: &String) -> Result<bool> {
+        self.multiple_buy_attempts(item_id, sku_id, None).await
+    }
+
+    // 等待开售
+    pub async fn wait_for_buy(
+        &self,
+        start_timestamp: i64,
+        item_id: &String,
+        sku_id: &String,
+    ) -> Result<bool> {
         let (s, r) = async_channel::unbounded::<bool>();
 
-        let interval = self.account.interval.unwrap_or(50);
-        let earliest_submit_time = self.account.earliest_submit_time.unwrap_or(1);
+        let interval = self.account.interval;
+        let earliest_submit_time = self.account.early_submit_time;
 
         // 轮询等待开抢
         loop {
             tokio::select! {
                 _ = signal::ctrl_c() => {
-                    info!("CTRL-C, 退出程序...");
-                    return Ok(());
+                    return Err(anyhow!("CTRL-C, 退出程序..."));
                 }
-
                 _ = tokio::time::sleep(Duration::from_millis(interval)) => {
                     let local: DateTime<Local> = Local::now();
                     let millis = local.timestamp_millis();
@@ -366,21 +443,53 @@ impl DmTicket {
                 }
 
                 _ = r.recv() => {
-
-                    // 多次重试
-                    for _ in 0..retry_times {
-                        if let Ok(res) = self.buy(&item_id, &sku_id).await {
-                            if res {// 抢购成功, 退出
-                                return Ok(());
-                            }
-                        }
-
-                        // 重试间隔
-                        tokio::time::sleep(Duration::from_millis(retry_interval)).await;
-                    }
-                    return Ok(());
+                    return self.multiple_buy_attempts(item_id, sku_id, None).await
                 }
             }
         }
+    }
+
+    // 轮询捡漏
+    pub async fn pick_up_leaks(&self, ticket_id: String, perform_id: String) -> Result<()> {
+        let pick_up_leaks_times = self.account.ticket.pick_up_leaks.times;
+        let pick_up_leaks_interval = self.account.ticket.pick_up_leaks.interval;
+        let pick_up_leaks_grades = self.account.ticket.pick_up_leaks.grades.clone();
+        let mut pick_up_leaks_num = self.account.ticket.pick_up_leaks.num;
+        if pick_up_leaks_num == 0 {
+            pick_up_leaks_num = self.account.ticket.num;
+        }
+
+        for i in 0..pick_up_leaks_times {
+            info!("第{}次查询库存...", i + 1);
+            if let Ok(perform_info) = self.get_perform_info(&ticket_id, &perform_id).await {
+                for idx in 0..perform_info.perform.sku_list.len() {
+                    let sku = &perform_info.perform.sku_list[idx];
+                    let grade_idx = idx + 1;
+                    // 票挡有库存, 并且在配置中
+                    if sku.sku_salable.contains("true")
+                        && (pick_up_leaks_grades.is_empty()
+                            || pick_up_leaks_grades.contains(&grade_idx))
+                    {
+                        info!("票档:{}, 有库存, 去购买...", sku.price_name);
+                        if let Ok(res) = self
+                            .multiple_buy_attempts(
+                                &perform_info.perform.perform_id,
+                                &sku.sku_id,
+                                Some(pick_up_leaks_num),
+                            )
+                            .await
+                        {
+                            if res {
+                                return Ok(());
+                            }
+                        }
+                        break;
+                    }
+                }
+            };
+            tokio::time::sleep(Duration::from_millis(pick_up_leaks_interval)).await;
+        }
+
+        Ok(())
     }
 }

@@ -52,8 +52,8 @@ pub struct OrderInfoContainer;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OrderInfoData;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct OrderInfoEndpoint;
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct OrderInfoEndpoint;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OrderInfoGlobal {
@@ -103,7 +103,7 @@ pub struct OrderInfoLinkage {
 pub struct OrderInfo {
     // pub container: OrderInfoContainer,
     pub data: Value,
-    pub endpoint: OrderInfoEndpoint,
+    //pub endpoint: OrderInfoEndpoint,
     pub global: OrderInfoGlobal,
     pub hierarchy: OrderInfoHierarchy,
     pub linkage: OrderInfoLinkage,

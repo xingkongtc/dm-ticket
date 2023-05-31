@@ -1,0 +1,30 @@
+{
+    "server": {
+        "port": 53,
+        "worker": 4,
+        "qsize": 1024
+    },
+    "cache": {
+        "max_size": 4096,
+        "max_ttl": 600,
+        "min_ttl": 300,
+        "preload_file": "config/domain.txt"
+    },
+    "upstreams": [
+        {
+            "host": "https://dns.alidns.com/dns-query"
+        },
+        {
+            "host": "https://doh.pub/dns-query"
+        },
+        {
+            "host": "223.5.5.5"
+        },
+        {
+            "host": "119.29.29.29"
+        },
+        {
+            "host": "8.8.8.8"
+        }
+    ]
+}

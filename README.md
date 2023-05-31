@@ -3,10 +3,9 @@
 
 大麦网自动购票, 支持docker一键部署。
 
-**这软件没用的，不要Star了，不要fork了，不要再尝试了。**
-
 
 ## 特别声明
+
 - 本项目内所有资源文件，禁止任何公众号、自媒体进行任何形式的转载、发布。
 - 编写本项目主要目的为学习和研究Rust，无法保证项目内容的合法性、准确性、完整性和有效性。
 - 本项目涉及的数据由使用的个人或组织自行填写，本项目不对数据内容负责，包括但不限于数据的真实性、准确性、合法性。使用本项目所造成的一切后果，与本项目的所有贡献者无关，由使用的个人或组织完全承担。
@@ -16,9 +15,40 @@
 - 所有直接或间接使用本项目的个人和组织，应24小时内完成学习和研究，并及时删除本项目中的所有内容。如对本项目的功能有需求，应自行开发相关功能。
 - 本项目保留随时对免责声明进行补充或更改的权利，直接或间接使用本项目内容的个人或组织，视为接受本项目的特别声明。
 
-## 使用说明
+## 学习项目
 
-- 下载docker-compose配置文件: `wget https://github.com/ClassmateLin/dm-ticket/releases/download/v0.1.2/dm-ticket.zip`
+- [Rust官网](https://www.rust-lang.org/)
+- [Rust字节镜像源](https://rsproxy.cn/)
+- [Rust语言圣经](https://course.rs/about-book.html)
+- [Rust中文社区](https://rustcc.cn/)
+- [Rust环境安装教程](https://course.rs/first-try/installation.html)
+
+**请确保您已成功安装Rust。**
+
+1. 先使用`docker-compose up -d`启动token-server, `docker-compose.yml`如下:
+```
+version: "3"
+  service:
+    token-server:
+      image: classmatelin/alitoken-server:v0.1.1
+      restart: always
+      container_name: token-server
+      environment:
+        RUST_LOG: "info"
+      ports:
+        - "8080:8080"
+```
+
+2. 获取项目: `git clone https://github.com/ClassmateLin/dm-ticket.git`
+
+3. 复制配置: `cd dm-ticket && cp config.yaml.example config.yaml`
+
+4. 运行项目: `cargo run --bin dm-ticket`
+
+
+## Docker使用说明
+
+- 下载docker-compose配置文件: `wget https://github.com/ClassmateLin/dm-ticket/releases/download/v0.1.3/dm-ticket.zip`
 - 解压zip: `unzip dm-ticket.zip && cd dm-ticket`
 - 运行容器: `docker-compose up -d`
 - 修改配置: `vim config/config.yaml`, 配置项在config/config.yaml中有详细注释。
@@ -30,11 +60,10 @@
     ![run2.png](./images/run2.png)
 
 
-## 命令列表
+## Docker命令列表
 
 - 自动购票: `docker exec -it dm-ticket dm-ticket`
 - 扫码登录: `docker exec -it dm-ticket dm-login`
-
 
     
 ## 常见问题
@@ -45,8 +74,8 @@
 - ["B-00203-200-100::网络开小差了，再试一次吧~"], 请检查是否复制了完整的cookie。
 - docker/docker-compose安装使用问题，请善用搜索引擎, 自行搜索解决方案。
 - 是否支持多账号, v0.1.0版本是支持多账号的。后续可能取消。要实现多账号支持, 开启多个docker容器也可以支持。
-- 频繁尝试运行程序出现,  ["RGV587_ERROR::SM::哎哟喂,被挤爆啦,请稍后重试!"]。请重新登陆。
-- 仅支持[H5端](https://m.daima.cn)可以购买的票。
+- 频繁尝试运行程序出现,  ["RGV587_ERROR::SM::哎哟喂,被挤爆啦,请稍后重试!"], 就不要试了。
+- 仅支持[H5端](https://m.damai.cn)可以购买的票。
 
 
 ## 其他说明
@@ -77,3 +106,9 @@
  按实名信息顺序, 自动选择。 如购买2张票, 默认选择前两位实名人。
 
 
+## 其他项目
+
+[zzdns](https://github.com/ClassmateLin/zzdns): 使用Rust构建的一款快速本地 DNS 解析器，用于提供更好的网络体验。支持Docker一键部署。
+[cfdns](https://github.com/ClassmateLin/cfdns): 一个本地DNS服务器, 用于测试 Cloudflare CDN 延迟和速度，获取最快 IP (IPv4 )。支持docker一键部署。
+[rust-scripts](https://github.com/ClassmateLin/rust-scripts): Rust写的一些小工具。
+[...](https://github.com/ClassmateLin?tab=repositories&q=&type=&language=&sort=) 
