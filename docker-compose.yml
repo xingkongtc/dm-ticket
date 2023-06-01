@@ -3,17 +3,18 @@ version: "3"
 networks:
   dm_network:
     driver: bridge
-#    ipam:
-#      driver: default
-#      config:
-#      - subnet: 172.20.0.0/16
-#        gateway: 172.20.0.1
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.88.0.0/24
+        gateway: 172.88.0.1
 
+    
 
 services:
-
+  # https://github.com/ClassmateLin/dm-ticket
   dm-ticket:
-    image: classmatelin/dm-ticket:latest
+    image: classmatelin/dm-ticket:v0.1.3
     container_name: dm-ticket
     restart: always
     privileged: true
@@ -23,17 +24,38 @@ services:
       - dm_network
     depends_on:
       - token-server
+      - zzdns
+    dns: 172.88.0.3
     environment:
       RUST_LOG: "INFO"
-      TOKEN_SERVER_URL: "http://token-server:8080"
+      TOKEN_SERVER_URL: "http://172.88.0.2:8080"
+      DNS_SERVER: "172.88.0.3"
+
+  zzdns:
+    # https://github.com/ClassmateLin/zzdns
+    image: classmatelin/zzdns:latest
+    restart: always
+    privileged: true
+    container_name: zzdns
+    volumes:
+      - "./zzdns:/usr/local/zzdns/config"
+    networks:
+      dm_network:
+        ipv4_address:  172.88.0.3
+    environment:
+      RUST_LOG: "info"
+    # ports:
+    #   - "53:53/udp"
 
   token-server:
-    image: classmatelin/alitoken-server:latest
+    image: classmatelin/alitoken-server:v0.1.1
     restart: always
     container_name: token-server
     networks:
-      - dm_network
+      dm_network:
+        ipv4_address:  172.88.0.2
     environment:
       RUST_LOG: "info"
     ports:
       - "8080:8080"
+

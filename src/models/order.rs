@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 
 use super::CommonParams;
 
-pub struct OrderParams {}
+pub struct OrderParams;
 
 // 生成订单的请求参数
 impl OrderParams {
@@ -21,7 +21,7 @@ impl OrderParams {
     }
 }
 
-pub struct OrderForm {}
+pub struct OrderForm;
 
 // 生成订单表单参数
 impl OrderForm {
@@ -47,13 +47,13 @@ impl OrderForm {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct OrderInfoContainer {}
+pub struct OrderInfoContainer;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct OrderInfoData {}
+pub struct OrderInfoData;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct OrderInfoEndpoint {}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct OrderInfoEndpoint;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct OrderInfoGlobal {
@@ -103,13 +103,13 @@ pub struct OrderInfoLinkage {
 pub struct OrderInfo {
     // pub container: OrderInfoContainer,
     pub data: Value,
-    pub endpoint: OrderInfoEndpoint,
+    //pub endpoint: OrderInfoEndpoint,
     pub global: OrderInfoGlobal,
     pub hierarchy: OrderInfoHierarchy,
     pub linkage: OrderInfoLinkage,
 }
 
-pub struct SubmitOrderParams {}
+pub struct SubmitOrderParams;
 
 impl SubmitOrderParams {
     pub fn build(submitref: String) -> Result<Value> {

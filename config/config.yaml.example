@@ -1,0 +1,48 @@
+accounts:
+    # .damai.cn中的cookie完整字符串
+    - cookie: ""
+      remark: 账号1
+
+      # 轮询判断当前时间是否大于等于可以请求数据的时间, 单位ms
+      interval: 30
+
+      # 最早提前多少毫秒发包。 开抢剩余时间戳 = 开始售票的时间戳 - 当前时间戳。 当开抢剩余时间戳时间小于submit_time时, 开始发送数据包。
+      earliest_submit_time: 5
+
+      # 请求时间 时间戳毫秒 用于捡漏 . 例如 50分是开票时间 但没有抢到,那么这里可以设置55分再抢一次,可能抢到二次放出的票
+      # 1685415600100
+      request_time: -1
+
+      # 生成订单和提交订单直接的等待间隔, 单位毫秒
+      wait_for_submit: 30
+
+      # 重试次数
+      retry_times: 2
+
+      # 重试间隔 单位毫秒
+      retry_interval: 100
+
+      ticket:
+        # 需要抢购的门票ID, 门票详情页URL中的itemId.如:https://m.damai.cn/damai/detail/item.html?utm=&itemId=710947802955
+        id: "721571231867"
+        # 需要抢购的门票数量
+        num: 1
+        # 需要抢购的场次序号.
+        sessions: 1
+        # 需要抢购的票档序号
+        grade: 2
+
+        # 优先购的时长是多少分钟(app优先购开始时间等于h5的开抢时间, 实际上没有优先购资格的需要等10-20分钟不等)。默认: 0, 没有优先购
+        priority_purchase_time: 0
+
+        # 捡漏配置, 只扫一张票
+        pick_up_leaks:
+
+          # 捡漏票数设置, 默认0, 与上面抢票配置保持一致。
+          num: 0
+          # 轮询间隔, 单位毫秒
+          interval: 2000
+          # 轮询次数
+          times: 100
+          # 票档序号
+          grades: [1, 2]
