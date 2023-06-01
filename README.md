@@ -108,7 +108,7 @@ version: "3"
 
 ## 其他项目
 
-[zzdns](https://github.com/ClassmateLin/zzdns): 使用Rust构建的一款快速本地 DNS 解析器，用于提供更好的网络体验。支持Docker一键部署。
-[cfdns](https://github.com/ClassmateLin/cfdns): 一个本地DNS服务器, 用于测试 Cloudflare CDN 延迟和速度，获取最快 IP (IPv4 )。支持docker一键部署。
-[rust-scripts](https://github.com/ClassmateLin/rust-scripts): Rust写的一些小工具。
-[...](https://github.com/ClassmateLin?tab=repositories&q=&type=&language=&sort=) 
+- [zzdns](https://github.com/ClassmateLin/zzdns): 使用Rust构建的一款快速本地 DNS 解析器，用于提供更好的网络体验。支持Docker一键部署。
+- [cfdns](https://github.com/ClassmateLin/cfdns): 一个本地DNS服务器, 用于测试 Cloudflare CDN 延迟和速度，获取最快 IP (IPv4 )。支持docker一键部署。
+- [rust-scripts](https://github.com/ClassmateLin/rust-scripts): Rust写的一些小工具。
+- [...](https://github.com/ClassmateLin?tab=repositories&q=&type=&language=&sort=) 
